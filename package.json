@@ -10,10 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@discordjs/opus": "^0.10.0",
     "@discordjs/voice": "^0.18.0",
+    "@distube/yt-dlp": "^2.0.1",
     "discord.js": "^14.19.3",
+    "distube": "^5.0.7",
     "dotenv": "^16.5.0",
-    "nodemon": "^3.1.10",
-    "ytdl-core": "^4.11.5"
+    "nodemon": "^3.1.10"
   }
 }
