@@ -117,7 +117,7 @@ client.on('messageCreate', async message => {
 
   if (cmd === '!ajuda') {
     return message.reply(
-      `🤖 **Comandos disponíveis:**\n` +
+      `🤖 **toma meu consagruaido:**\n` +
       `\`!toca <nome ou link>\` — Toca uma música\n` +
       `\`!pula\` — Pula para a próxima música\n` +
       `\`!pare\` — Para a música e limpa a fila\n` +
