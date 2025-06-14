@@ -135,7 +135,7 @@ client.on('messageCreate', async message => {
   console.log(`\nquery: ${query}\n`);
 
   // Verifica se é um link do YouTube
-  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+  const youtubeRegex = /www\.youtube\.com\/.+$/;
   if (youtubeRegex.test(query)) {
     console.log('🎵 Tocando música do YouTube:', query);
   } else {
