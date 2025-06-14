@@ -28,7 +28,6 @@ client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
 
   const [cmd, ...args] = message.content.trim().split(/\s+/);
-  message.reply('processinggggggg 🤖');
 
   if (cmd === '!pula') {
     const queue = distube.getQueue(message);
@@ -129,42 +128,43 @@ client.on('messageCreate', async message => {
     );
   }
 
-  if (cmd !== '!toca') return;
+  if (cmd === '!toca') {
+    console.log('🎶 processinggggg 🤖');
+    let query = args.join(' ');
+    console.log('🔍 vc quer tocar:', query);
+    if (!query) return message.reply('⚠️ Envie o link ou nome da música!');
+    console.log(`\nquery: ${query}\n`);
 
-  let query = args.join(' ');
-  if (!query) return message.reply('⚠️ Envie o link ou nome da música!');
-  console.log(`\nquery: ${query}\n`);
-
-  // Verifica se é um link do YouTube
-  const youtubeRegex = /www\.youtube\.com\/.+$/;
-  if (youtubeRegex.test(query)) {
-
-    // Verifica se é uma playlist do YouTube
-    query.includes('&list=') ? query = query.trim() : query = query.trim().split('&')[0];
-
-  } else {
-    console.log('🔍 Buscando música no YouTube:', query);
-    // Busca o link do YouTube usando a API
-    const youtubeLink = await buscarYoutubeLink(query);
-    if (!youtubeLink) {
-      return message.reply('❌ Não consegui encontrar a música no YouTube.');
+    // Verifica se é um link do YouTube
+    const youtubeRegex = /www\.youtube\.com\/.+$/;
+    if (youtubeRegex.test(query)) {
+      query = query.trim().split('&')[0];
+    } else {
+      console.log('🔍 Buscando música no YouTube:', query);
+      // Busca o link do YouTube usando a API
+      const youtubeLink = await buscarYoutubeLink(query);
+      if (!youtubeLink) {
+        return message.reply('❌ Não consegui encontrar a música no YouTube.');
+      }
+      console.log('🔗 Link encontrado:', youtubeLink)
+      query = youtubeLink; // Atualiza a query com o link encontrado
     }
-    console.log('🔗 Link encontrado:', youtubeLink)
-    query = youtubeLink; // Atualiza a query com o link encontrado
-  }
-  console.log('🎶 Tocando música:', query);
-  const voiceChannel = message.member.voice.channel;
-  if (!voiceChannel) return message.reply('🎧 Você precisa estar em um canal de voz!');
+    // console.log('🎶 Tocando música:', query);
+    const voiceChannel = message.member.voice.channel;
+    if (!voiceChannel) return message.reply('🎧 Você precisa estar em um canal de voz!');
 
-  try {
-    await distube.play(voiceChannel, query, {
-      textChannel: message.channel,
-      member: message.member
-    });
-  } catch (e) {
-    console.error('❌ Erro ao tocar a música:', e);
-    message.reply('❌ Não consegui tocar a música.');
-  }
+    try {
+      await distube.play(voiceChannel, query, {
+        textChannel: message.channel,
+        member: message.member
+      });
+      console.log('🎶 Tocando música:', query);
+    } catch (e) {
+      console.error('❌ Erro ao tocar a música:', e);
+      message.reply('❌ Não consegui tocar a música.');
+    }
+  };
+  
 });
 
 // Eventos de músicas
