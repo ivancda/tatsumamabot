@@ -28,6 +28,7 @@ client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
 
   const [cmd, ...args] = message.content.trim().split(/\s+/);
+  message.reply('processinggggggg 🤖');
 
   if (cmd === '!pula') {
     const queue = distube.getQueue(message);
@@ -88,32 +89,32 @@ client.on('messageCreate', async message => {
   }
 
   if (cmd === '!limpa') {
-  try {
-    // Lista de comandos do bot
-    const comandos = ['!toca', '!pula', '!pare', '!embaralhe', '!coloca', '!limpa', '!ajuda'];
+    try {
+      // Lista de comandos do bot
+      const comandos = ['!toca', '!pula', '!pare', '!embaralhe', '!coloca', '!limpa', '!ajuda'];
 
-    // Busca as últimas 100 mensagens do canal
-    const messages = await message.channel.messages.fetch({ limit: 100 });
+      // Busca as últimas 100 mensagens do canal
+      const messages = await message.channel.messages.fetch({ limit: 100 });
 
-    // Filtra mensagens enviadas pelo bot OU que contenham algum comando do bot
-    const msgsParaApagar = messages.filter(m =>
-      m.author.id === client.user.id ||
-      comandos.some(cmd => m.content.trim().startsWith(cmd))
-    );
+      // Filtra mensagens enviadas pelo bot OU que contenham algum comando do bot
+      const msgsParaApagar = messages.filter(m =>
+        m.author.id === client.user.id ||
+        comandos.some(cmd => m.content.trim().startsWith(cmd))
+      );
 
-    if (msgsParaApagar.size === 0) {
-      return message.reply('🤖 Não encontrei mensagens para apagar cachoera.');
+      if (msgsParaApagar.size === 0) {
+        return message.reply('🤖 Não encontrei mensagens para apagar cachoera.');
+      }
+
+      // Deleta as mensagens filtradas em massa (até 100)
+      await message.channel.bulkDelete(msgsParaApagar, true);
+      message.channel.send('🧹 Mensagens de comandos e do bot foram limpas cachoera!').then(msg => setTimeout(() => msg.delete(), 3000));
+    } catch (err) {
+      console.error('❌ Erro ao limpar mensagens cachoera:', err);
+      message.reply('❌ Não consegui limpar as mensagens cachoera.');
     }
-
-    // Deleta as mensagens filtradas em massa (até 100)
-    await message.channel.bulkDelete(msgsParaApagar, true);
-    message.channel.send('🧹 Mensagens de comandos e do bot foram limpas cachoera!').then(msg => setTimeout(() => msg.delete(), 3000));
-  } catch (err) {
-    console.error('❌ Erro ao limpar mensagens cachoera:', err);
-    message.reply('❌ Não consegui limpar as mensagens cachoera.');
+    return;
   }
-  return;
-}
 
   if (cmd === '!ajuda') {
     return message.reply(
@@ -137,7 +138,10 @@ client.on('messageCreate', async message => {
   // Verifica se é um link do YouTube
   const youtubeRegex = /www\.youtube\.com\/.+$/;
   if (youtubeRegex.test(query)) {
-    query = query.trim().split('&')[0];
+
+    // Verifica se é uma playlist do YouTube
+    query.includes('&list=') ? query = query.trim() : query = query.trim().split('&')[0];
+
   } else {
     console.log('🔍 Buscando música no YouTube:', query);
     // Busca o link do YouTube usando a API
