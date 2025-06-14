@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
-const { DisTube } = require('distube');
+const { DisTube, ExtractorPlugin } = require('distube');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
 const axios = require('axios');
 
@@ -138,7 +138,14 @@ client.on('messageCreate', async message => {
     // Verifica se é um link do YouTube
     const youtubeRegex = /www\.youtube\.com\/.+$/;
     if (youtubeRegex.test(query)) {
-      query = query.trim().split('&')[0];
+      // if (query.includes('&list=')) {
+      // TODO
+      // FAZE A PLAYLIST MANUALMENTE COM API DO YOUTUBE
+        
+      // } else {
+        query = query.trim().split('&')[0];
+      // }
+
     } else {
       console.log('🔍 Buscando música no YouTube:', query);
       // Busca o link do YouTube usando a API
@@ -164,7 +171,7 @@ client.on('messageCreate', async message => {
       message.reply('❌ Não consegui tocar a música.');
     }
   };
-  
+
 });
 
 // Eventos de músicas
