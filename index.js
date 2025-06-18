@@ -139,9 +139,24 @@ client.on('messageCreate', async message => {
     const youtubeRegex = /www\.youtube\.com\/.+$/;
     if (youtubeRegex.test(query)) {
       // if (query.includes('&list=')) {
-      // TODO
-      // FAZE A PLAYLIST MANUALMENTE COM API DO YOUTUBE
+      //   console.log('🔗 Link de playlist detectado:', query);
+      //   const playlistId = query.split('list=')[1].split('&')[0];
+
+      //   // Busca os vídeos da playlist
+      //   const videoUrls = await getPlaylistVideoUrls(playlistId)
+
+      //   console.log('🔗 URLs dos vídeos encontrados:', videoUrls);
         
+      //   if (videoUrls.length === 0) {
+      //     return message.reply('❌ Não consegui encontrar vídeos na playlist.');
+      //   }
+      //   console.log('🔗 Vídeos encontrados na playlist:', videoUrls)
+      //   // Toca a playlist
+      //   for (const videoUrl of videoUrls) {
+      //     console.log('🎶 Tocando vídeo da playlist:', videoUrl);
+      //     await tocar(message.member.voice.channel, videoUrl, message);
+      //   }
+      //   return message.reply(`🎶 Playlist iniciada com ${videoUrls.length} vídeos!`);   
       // } else {
         query = query.trim().split('&')[0];
       // }
@@ -156,20 +171,10 @@ client.on('messageCreate', async message => {
       console.log('🔗 Link encontrado:', youtubeLink)
       query = youtubeLink; // Atualiza a query com o link encontrado
     }
-    // console.log('🎶 Tocando música:', query);
-    const voiceChannel = message.member.voice.channel;
-    if (!voiceChannel) return message.reply('🎧 Você precisa estar em um canal de voz!');
 
-    try {
-      await distube.play(voiceChannel, query, {
-        textChannel: message.channel,
-        member: message.member
-      });
-      console.log('🎶 Tocando música:', query);
-    } catch (e) {
-      console.error('❌ Erro ao tocar a música:', e);
-      message.reply('❌ Não consegui tocar a música.');
-    }
+    tocar(message.member.voice.channel, query, message);
+    return;
+
   };
 
 });
@@ -189,6 +194,20 @@ distube
 
 client.login(process.env.DISCORD_TOKEN);
 
+
+async function tocar(voiceChannel, query, message) {
+  try {
+    await distube.play(voiceChannel, query, {
+      textChannel: message.channel,
+      member: message.member
+    });
+  } catch (err) {
+    console.error('❌ Erro ao tocar música:', err);
+    message.reply('❌ Não consegui tocar a música.');
+  }
+}
+
+
 async function buscarYoutubeLink(query) {
   const apiKey = process.env.YOUTUBE_API_KEY; // coloque sua chave no .env
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(query)}&key=${apiKey}`;
@@ -199,3 +218,32 @@ async function buscarYoutubeLink(query) {
   }
   return null;
 }
+
+// async function getPlaylistVideoUrls(playlistId) {
+//   console.log('🔗 Buscando vídeos da playlist:', playlistId);
+//   const apiKey = process.env.YOUTUBE_API_KEY;
+//   let nextPageToken = '';
+//   let urls = [];
+
+//   try {
+//     do {
+//       const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=50&pageToken=${nextPageToken}&key=${apiKey}`;
+//       const res = await axios.get(url);
+//       console.log(res.data);
+//       const items = res.data.items;
+
+//       for (const item of items) {
+//         urls.push(`https://www.youtube.com/watch?v=${item.snippet.resourceId.videoId}`);
+//       }
+
+//       nextPageToken = res.data.nextPageToken;
+//     } while (nextPageToken);
+
+//   } catch (err) {
+//     console.error('❌ Erro ao buscar vídeos da playlist:', err);
+//     return [];
+//   }
+
+
+//   return urls;
+// }
