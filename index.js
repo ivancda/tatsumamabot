@@ -5,6 +5,7 @@ import { YtDlpPlugin } from '@distube/yt-dlp';
 import { YouTubePlugin } from '@distube/youtube';
 import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';
+import { FilePlugin } from "@distube/file";
 import axios from 'axios';
 //
 
@@ -24,6 +25,7 @@ const distube = new DisTube(client, {
 	plugins: [
 		new SpotifyPlugin(),
 		new SoundCloudPlugin(),
+		new FilePlugin(),
 		new YouTubePlugin(), // <-- Use este como extrator principal do YouTube
 		// new YtDlpPlugin({ update: true }),
 	],
@@ -123,6 +125,7 @@ client.on('messageCreate', async (message) => {
 				'!coloca',
 				'!limpa',
 				'!ajuda',
+				'!fila',
 			];
 
 			// Busca as últimas 100 mensagens do canal
@@ -191,6 +194,23 @@ client.on('messageCreate', async (message) => {
 		const isLink = query.startsWith('http');
 		let finalQuery = query;
 
+		// TODO ARQUIVOS LOCAIS
+		// // Se for arquivo local ou remoto suportado pelo FilePlugin
+		// if (/\.(mp3|wav|ogg|flac|aac)$/i.test(finalQuery)) {
+		// 	try {
+		// 		await distube.play(message.member.voice.channel, finalQuery, {
+		// 			textChannel: message.channel,
+		// 			member: message.member,
+		// 		});
+		// 		return;
+		// 	} catch (err) {
+		// 		console.error('❌ Erro ao tocar arquivo:', err);
+		// 		console.error('❌ Erro ao tocar arquivo (message):', err?.message);
+		// 		console.error('❌ Erro ao tocar arquivo (stack):', err?.stack);
+		// 		return message.reply('❌ Não consegui tocar o arquivo de áudio: ' + (err?.message || err));
+		// 	}
+		// }
+
 		if (!isLink) {
 			const results = await extractorPlugin.search(query, { type: 'video', limit: 1 });
 			if (!results || results.length === 0) {
@@ -228,10 +248,10 @@ distube
 	})
 	.on('error', (channel, err) => {
 		console.error('❌ DisTube erro:', err);
-
-		// Evita crash caso channel não seja um canal válido
+		console.error('❌ DisTube erro (message):', err?.message);
+		console.error('❌ DisTube erro (stack):', err?.stack);
 		if (channel && typeof channel.send === 'function') {
-			channel.send('❌ Ocorreu um erro ao reproduzir.');
+			channel.send('❌ Ocorreu um erro ao reproduzir: ' + (err?.message || err));
 		}
 	});
 
