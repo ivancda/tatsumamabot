@@ -1,10 +1,12 @@
-require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
-const { DisTube, Playlist } = require('distube');
-const { YtDlpPlugin } = require('@distube/yt-dlp');
-const { SpotifyPlugin } = require('@distube/spotify');
-const { SoundCloudPlugin } = require('@distube/soundcloud');
-const axios = require('axios');
+import 'dotenv/config';
+import { Client, GatewayIntentBits } from 'discord.js';
+import { DisTube, Playlist } from 'distube';
+import { YtDlpPlugin } from '@distube/yt-dlp';
+import { YouTubePlugin } from '@distube/youtube';
+import { SpotifyPlugin } from '@distube/spotify';
+import { SoundCloudPlugin } from '@distube/soundcloud';
+import axios from 'axios';
+//
 
 // Cria cliente Discord com intents necessárias
 const client = new Client({
@@ -22,15 +24,18 @@ const distube = new DisTube(client, {
 	plugins: [
 		new SpotifyPlugin(),
 		new SoundCloudPlugin(),
-		new YtDlpPlugin({ update: true }),
+		new YouTubePlugin(), // <-- Use este como extrator principal do YouTube
+		// new YtDlpPlugin({ update: true }),
 	],
 });
 
 // Pegue o plugin que herda de PlayableExtractorPlugin
+// const extractorPlugin = distube.plugins.find(
+// 	p => p.constructor.name === 'YtDlpPlugin',
+// );
 const extractorPlugin = distube.plugins.find(
-	p => p.constructor.name === 'YtDlpPlugin',
+	p => p.constructor.name === 'YouTubePlugin',
 );
-
 
 client.once('ready', () => {
 	console.log(`✅ Bot online como ${client.user.tag}`);
@@ -60,7 +65,7 @@ client.on('messageCreate', async (message) => {
 
 	if (cmd === '!pare') {
 		const queue = distube.getQueue(message);
-		if (!queue) {return message.reply('❌ Não tem nenhuma música tocando agora.');}
+		if (!queue) { return message.reply('❌ Não tem nenhuma música tocando agora.'); }
 		try {
 			await queue.stop();
 			message.reply('⏹️ Música parada e fila limpa 100=');
@@ -73,7 +78,7 @@ client.on('messageCreate', async (message) => {
 
 	if (cmd === '!embaralhe') {
 		const queue = distube.getQueue(message);
-		if (!queue) {return message.reply('❌ Não tem nenhuma música tocando agora.');}
+		if (!queue) { return message.reply('❌ Não tem nenhuma música tocando agora.'); }
 		try {
 			await queue.shuffle();
 			message.reply('⏹️ Música embRaralda!');
@@ -89,14 +94,14 @@ client.on('messageCreate', async (message) => {
 		if (!query) return message.reply('⚠️ Envie o tempo em segundos!');
 
 		const voiceChannel = message.member.voice.channel;
-		if (!voiceChannel) {return message.reply('🎧 Você precisa estar em um canal de voz!');}
+		if (!voiceChannel) { return message.reply('🎧 Você precisa estar em um canal de voz!'); }
 
 		try {
 			const queue = distube.getQueue(message);
-			if (!queue) {return message.reply('❌ Não tem nenhuma música tocando agora.');}
+			if (!queue) { return message.reply('❌ Não tem nenhuma música tocando agora.'); }
 
 			const time = parseInt(query, 10);
-			if (isNaN(time) || time < 0) {return message.reply('⚠️ Envie um número válido de segundos!');}
+			if (isNaN(time) || time < 0) { return message.reply('⚠️ Envie um número válido de segundos!'); }
 
 			await queue.seek(time);
 			message.reply(`⏱️ Música avançada para ${time} segundos!`);
@@ -127,7 +132,7 @@ client.on('messageCreate', async (message) => {
 			const msgsParaApagar = messages.filter(
 				(m) =>
 					m.author.id === client.user.id ||
-          comandos.some((cmd) => m.content.trim().startsWith(cmd)),
+					comandos.some((cmd) => m.content.trim().startsWith(cmd)),
 			);
 
 			if (msgsParaApagar.size === 0) {
@@ -152,14 +157,14 @@ client.on('messageCreate', async (message) => {
 	if (cmd === '!ajuda') {
 		return message.reply(
 			'🤖 **toma meu consagruaido:**\n' +
-    '`!toca <nome ou link>` — Toca uma música\n' +
-    '`!pula` — Pula para a próxima música\n' +
-    '`!pare` — Para a música e limpa a fila\n' +
-    '`!embaralhe` — Embaralha a fila de músicas\n' +
-    '`!coloca <segundos>` — Avança a música para o tempo informado\n' +
-    '`!limpa` — Limpa as mensagens de comandos e do bot\n' +
-    '`!fila` — Mostra a fila de músicas\n' +
-    '`!ajuda` — Mostra esta mensagem',
+			'`!toca <nome ou link>` — Toca uma música\n' +
+			'`!pula` — Pula para a próxima música\n' +
+			'`!pare` — Para a música e limpa a fila\n' +
+			'`!embaralhe` — Embaralha a fila de músicas\n' +
+			'`!coloca <segundos>` — Avança a música para o tempo informado\n' +
+			'`!limpa` — Limpa as mensagens de comandos e do bot\n' +
+			'`!fila` — Mostra a fila de músicas\n' +
+			'`!ajuda` — Mostra esta mensagem',
 		);
 	}
 
@@ -187,38 +192,11 @@ client.on('messageCreate', async (message) => {
 		let finalQuery = query;
 
 		if (!isLink) {
-			const youtubeLink = await buscarYoutubeLink(query);
-			if (!youtubeLink) {return message.reply('❌ Não encontrei nada no YouTube.');}
-			finalQuery = youtubeLink;
-		}
-
-		if (finalQuery.includes('youtube.com') && finalQuery.includes('&')) {
-
-			// if (finalQuery.includes("list=")) {
-			//   // Se for uma playlist, busca os vídeos
-			//   const playlistId = finalQuery.split("list=")[1].split("&")[0];
-			//   console.log("🎵 Buscando vídeos da playlist:", playlistId);
-
-			//   playPlaylist(playlistId, distube, message.member.voice.channel, message)
-			//     .then(() => {
-			//       message.reply(`🎶 Playlist ${playlistId} adicionada à fila!`);
-			//     })
-			//     .catch((err) => {
-			//       console.error("❌ Erro ao tocar playlist:", err);
-			//       message.reply("❌ Não consegui tocar a playlist.");
-			//     });
-
-			//   // videoUrls.forEach((url) => {
-			//   //   console.log("🎵 Adicionando vídeo da playlist:", url)
-			//   //   const urlLimpa = url.split("&")[0]; // remove parâmetros extras
-			//   //   tocar(message.member.voice.channel, urlLimpa, message);
-			//   // });
-			//   return;
-			// } else {
-			// Se for um vídeo único, mantém o link original
-			finalQuery = finalQuery.split('&')[0]; // remove parâmetros extras
-			// }
-
+			const results = await extractorPlugin.search(query, { type: 'video', limit: 1 });
+			if (!results || results.length === 0) {
+				return message.reply('❌ Não encontrei nada no YouTube.');
+			}
+			finalQuery = results[0].url;
 		}
 
 		if (/spotify\.com\/.*\/track/.test(finalQuery)) {
@@ -226,7 +204,7 @@ client.on('messageCreate', async (message) => {
 				const nomeBusca = await buscarNomeSpotify(finalQuery);
 				console.log('🎵 Buscando no YouTube por:', nomeBusca);
 				const youtubeLink = await buscarYoutubeLink(nomeBusca);
-				if (!youtubeLink) {return message.reply('❌ Não encontrei a música no YouTube.');}
+				if (!youtubeLink) { return message.reply('❌ Não encontrei a música no YouTube.'); }
 				finalQuery = youtubeLink; // ⚠️ Aqui substitui o link original!
 			}
 			catch (err) {
@@ -261,6 +239,42 @@ client.login(process.env.DISCORD_TOKEN);
 
 async function tocar(voiceChannel, query, message) {
 	try {
+		const resolved = await extractorPlugin.resolve(query, {
+			member: message.member,
+			distube: distube,
+		});
+
+		if (resolved && Array.isArray(resolved.songs) && resolved.songs.length > 0) {
+			// É playlist
+			await distube.play(voiceChannel, resolved, {
+				textChannel: message.channel,
+				member: message.member,
+			});
+			return message.reply(`🎶 Playlist "${resolved.name}" adicionada à fila com ${resolved.songs.length} músicas!`);
+		}
+
+		if (/list=RD/.test(query)) {
+
+			// Toca o vídeo principal
+			await distube.play(voiceChannel, query, {
+				textChannel: message.channel,
+				member: message.member,
+			});
+
+			// Adiciona os vídeos relacionados na fila, max 25
+			if (resolved.related && Array.isArray(resolved.related)) {
+				for (const rel of resolved.related.slice(0, 25)) {
+					const url = `https://www.youtube.com/watch?v=${rel.id}`;
+					await distube.play(voiceChannel, url, {
+						textChannel: message.channel,
+						member: message.member,
+					});
+				}
+			}
+			return message.reply(`🎶 Mix do yt "${resolved.name}" adicionada à fila com ${resolved.related.length} músicas relacionadas!`);
+		}
+
+		// Se não for playlist, toca normalmente
 		await distube.play(voiceChannel, query, {
 			textChannel: message.channel,
 			member: message.member,
@@ -282,14 +296,9 @@ async function tocar(voiceChannel, query, message) {
 }
 
 async function buscarYoutubeLink(query) {
-	const apiKey = process.env.YOUTUBE_API_KEY; // coloque sua chave no .env
-	const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&q=${encodeURIComponent(
-		query,
-	)}&key=${apiKey}`;
-	const res = await axios.get(url);
-	const items = res.data.items;
-	if (items && items.length > 0) {
-		return `https://www.youtube.com/watch?v=${items[0].id.videoId}`;
+	const results = await extractorPlugin.search(query, { type: 'video', limit: 1 });
+	if (results && results.length > 0) {
+		return results[0].url;
 	}
 	return null;
 }
@@ -316,66 +325,13 @@ async function getSpotifyToken() {
 		{
 			headers: {
 				Authorization:
-          'Basic ' +
-          Buffer.from(
-          	`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`,
-          ).toString('base64'),
+					'Basic ' +
+					Buffer.from(
+						`${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`,
+					).toString('base64'),
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
 		},
 	);
 	return res.data.access_token;
-}
-
-async function playPlaylist(playlistId, distube, voiceChannel, message) {
-	const apiKey = process.env.YOUTUBE_API_KEY;
-	let nextPageToken = undefined;
-	const usedNextPageTokens = [];
-	const urlsSet = new Set();
-
-	do {
-		const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=contentDetails&maxResults=50&playlistId=${playlistId}&key=${apiKey}` +
-      (nextPageToken ? `&pageToken=${nextPageToken}` : '');
-		const res = await axios.get(url);
-
-		if (usedNextPageTokens.includes(res.data.nextPageToken)) break;
-		usedNextPageTokens.push(res.data.nextPageToken);
-
-		res.data.items.forEach(item => {
-			urlsSet.add(`https://www.youtube.com/watch?v=${item.contentDetails.videoId}`);
-		});
-		nextPageToken = res.data.nextPageToken;
-	} while (nextPageToken);
-
-	const urls = Array.from(urlsSet);
-	if (urls.length === 0) {
-		throw new Error('Nenhum vídeo encontrado na playlist.');
-	}
-
-	const songs = await montarSongs(urls, distube, message.member);
-
-	const playlistInfo = {
-		id: playlistId,
-		name: `Playlist ${playlistId}`,
-		songs: songs,
-		source: 'youtube',
-		url: `https://www.youtube.com/playlist?list=${playlistId}`,
-	};
-
-	const playlistObj = new Playlist(playlistInfo, { member: message.member });
-
-	await distube.play(voiceChannel, playlistObj, {
-		textChannel: message.channel,
-		member: message.member,
-	});
-}
-
-// Agora use o método resolve para cada URL
-async function montarSongs(urls, member, distube) {
-	const songs = [];
-	for (const url of urls) {
-		const song = await extractorPlugin.resolve(url, { member, distube });
-		if (song) songs.push(song);
-	}
-	return songs;
 }
